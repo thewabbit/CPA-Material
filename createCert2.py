@@ -11,45 +11,44 @@ from tkinter import *
 
 class CPA_Cert_Generator (tk.Tk):
     def __init__(self):
+        """Initialize the GUI application with buttons, labels, and a text box for logging."""
+
         super().__init__()
 
+        # Set the initial values of the template and lifterData attributes to None.
         self.template = None
-        #self.template = r'G:\My Drive\Documents\Powerlifting\CPA\Create Certificates\Templates\3LIFT CERT TEMPLATE.docx'
         self.lifterData = None
-        #self.lifterData = r'G:\My Drive\Documents\Powerlifting\CPA\Create Certificates\Templates\Certificate Generator2.xlsx'
 
+        # Set the size, background color, and title of the window.
         self.geometry('580x470')
         self.configure(background='#FAEBD7')
         self.title('CPA Certificate Generator')
 
+        # Set the fonts for buttons, labels, and file path displays.
         self.buttonFont = ('courier', 12, 'normal')
         self.labelFont = ('courier', 12, 'bold')
         self.pathFont = ('courier', 12, 'normal')
         self.logFont = ('courier', 10, 'normal')
 
-        self.logBox = scrolledtext.ScrolledText(self, wrap = tk.WORD, width = 60, height = 10, font = self.logFont)
+        # Set up the logging text box and configure it with tags for different message types.
+        self.logBox = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=60, height=10, font=self.logFont)
         self.logBox.place(x=40, y=278)
         self.logBox.insert(tk.INSERT, 'Please select files \n')
         self.logBox.configure(state='disabled')
         self.logBox.tag_configure('error', foreground='red')
         self.logBox.tag_configure('warning', foreground='orange')
 
+        # Set up the labels for displaying the selected template and lifter data file paths.
         self.selectedTemplate = Label(self, text='', bg='#FAEBD7', font=self.pathFont)
         self.selectedTemplate.place(x=230, y=78)
-
         self.selectedLifterData = Label(self, text='', bg='#FAEBD7', font=self.pathFont)
         self.selectedLifterData.place(x=260, y=158)
 
+        # Set up the buttons for selecting the template and lifter data files.
         self.templateButton = Button(self, text='Select Template File', bg='#FAEBD7', font=self.buttonFont, command=self.selectTemplate)
         self.templateButton.place(x=40, y=38)
-
-        Label(self, text='Selected Template:', bg='#FAEBD7', font=self.labelFont).place(x=40, y=78)
-
         self.lifterDataButton = Button(self, text='Select Lifter Data', bg='#FAEBD7', font=self.buttonFont, command=self.selectLifterData)
         self.lifterDataButton.place(x=40, y=118)
-
-        Label(self, text='Selected Lifter Data:', bg='#FAEBD7', font=self.labelFont).place(x=40, y=158)
-
         self.runButton = Button(self, text='Generate Certificate', bg='#FAEBD7', font=self.buttonFont, command=self.check)
         self.runButton.place(x=40, y=198)
 
