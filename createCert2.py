@@ -1,3 +1,4 @@
+import multiprocessing.dummy
 import os
 import random
 import tkinter as tk
@@ -217,137 +218,6 @@ class CPA_Cert_Generator (tk.Tk):
         #get number of days
         self.days = max(list(set(item["Day"] for item in self.lifterData)))
 
-    def createSpeaker(self, lifter):
-
-        # Create a new Word document based on the provided template
-        doc = Document(self.speakerTemplate)
-
-
-        name = f'{lifter["First name"]} {lifter["Last name"]}'
-        dob = lifter["DOB"].strftime("%d/%m/%Y")
-        
-        #spaces are so it doesn't replace other numbers in the template
-        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzDOBzz=dob, zzNATIONzz=lifter["Nation"], zzLOTzz=lifter["Lot"]+"   "))
-
-        # Log that a speaker card is being generated for the current row
-        self.log(f'Generating speaker card for {name}')
-
-        # Save the current document as a Word file and convert it to PDF
-        doc.save(f'c:\\temp\\{self.GUID}\\speaker_{name}.docx')
-        convert(f'c:\\temp\\{self.GUID}\\speaker_{name}.docx')
-        # Add the path of the generated PDF to the list
-        self.speakerPDFs.append(f'c:\\temp\\{self.GUID}\\speaker_{name}.pdf')
-
-        # Log that a speaker card has been generated for the current row
-        self.log(f'Generated certificate for {name}')
-
-        # Replace placeholder values in the Word document with empty strings to revert back to the original template
-        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzDOBzz=dob, zzNATIONzz=lifter["Nation"], zzLOTzz=lifter["Lot"]+"   "), True)
-
-        # # Log that the speaker cards are being merged into a single PDF
-        # self.log(f'Merging speaker card PDFs')
-
-        # # Create a new PDF merger object
-        # merger = PdfMerger()
-
-        # # Iterate through each PDF file path in the list and add it to the merger
-        # for pdf in allPDFs:
-        #     merger.append(pdf)
-
-        # # Write the merged PDF to a file
-        # merger.write('speakercards.pdf')
-
-        # # Log that the speaker cards have been merged into a single PDF
-        # self.log(f'Speaker Cards merged into one PDF')
-
-    def createCetificates(self, lifter):
-        """
-        Processes the data in the Excel workbook and generates certificates for each row of data.
-        Merges all generated certificates into a single PDF file.
-
-        Returns:
-        None
-        """
-
-        # Create a new Word document based on the provided template
-        doc = Document(self.certificateTemplate)
-
-        # Initialize a list to store the paths of all generated PDFs
-
-
-        # # Iterate through each row of data in the worksheet
-        # for l in self.lifterData:
-
-        name = f'{lifter["First name"]} {lifter["Last name"]}'
-
-        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzGENDERzz=lifter["Gender"], zzDIVzz=lifter["Age"], zzEQUIPzz=lifter["Raw"]))
-
-        # Log that a certificate is being generated for the current row
-        self.log(f'Generating certificate for {name}')
-
-        # Save the current document as a Word file and convert it to PDF
-        doc.save(f'c:\\temp\\{self.GUID}\\certificate_{name}.docx')
-        convert(f'c:\\temp\\{self.GUID}\\certificate_{name}.docx')
-        # Add the path of the generated PDF to the list
-        self.certificatePDFs.append(f'c:\\temp\\{self.GUID}\\certificate_{name}.pdf')
-
-        # Log that a certificate has been generated for the current row
-        self.log(f'Generated certificate for {name}')
-
-        # Replace placeholder values in the Word document with empty strings to revert back to the original template
-        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzGENDERzz=lifter["Gender"], zzDIVzz=lifter["Age"], zzEQUIPzz=lifter["Raw"]), True)
-
-        # # Log that the certificates are being merged into a single PDF
-        # self.log(f'Merging Certificate PDFs')
-
-        # # Create a new PDF merger object
-        # merger = PdfMerger()
-
-        # # Iterate through each PDF file path in the list and add it to the merger
-        # for pdf in allPDFs:
-        #     merger.append(pdf)
-
-        # # Write the merged PDF to a file
-        # merger.write('certificates.pdf')
-
-        # # Log that the certificates have been merged into a single PDF
-        # self.log(f'Certificates merged into one PDF')
-
-    def findReplaceTable(self, doc, data, revert=False):
-        """
-        Find and replace text in tables in a Word document.
-
-        Arguments:
-        - doc: a `docx.Document` object representing the Word document to modify
-        - data: a dictionary containing the text to find and its replacement
-        - revert: if `True`, the find and replace arguments will be swapped
-            (default: False)
-
-        Returns:
-        - None
-
-        """
-        # If revert is True, swap find and replace arguments
-        if revert:
-            data = {v: k for k, v in data.items()}
-
-        # Loop over the tables in the document
-        for table in doc.tables:
-            # Loop over the rows in the table
-            for row in table.rows:
-                # Loop over the cells in the row
-                for cell in row.cells:
-                    # If the find text is in the cell, loop over the paragraphs in the cell
-                    if any(find in cell.text for find in data.keys()):
-                        for p in cell.paragraphs:
-                            # If the find text is in the paragraph, loop over the runs in the paragraph
-                            if any(find in p.text for find in data.keys()):
-                                for run in p.runs:
-                                    # If the find text is in the run, replace it with the replacement text
-                                    if any(find in run.text for find in data.keys()):
-                                        for find, replace in data.items():
-                                            run.text = run.text.replace(find, replace)
-
     def createWeighIn(self):
         allPDFs = []
         self.log("Creating weigh ins")
@@ -383,22 +253,198 @@ class CPA_Cert_Generator (tk.Tk):
         # Write the merged PDF to a file
         merger.write('weigh in.pdf')
         self.log("Weigh ins created")
+        
 
     def run(self):
         self.proccessData()
         self.GUID = str(uuid.uuid4())
         os.mkdir(f'c:\\temp\\{self.GUID}\\')
-        #self.createCetificates()
-        #self.createSpeaker()
-        #self.createWeighIn()
 
-        for lifter in self.lifterData:
-            self.createCetificates(lifter)
-            self.createSpeaker(lifter)
+        pool1= multiprocessing.Pool(processes=2)
+
+        pdfgen = PDFGenerator()
+
+        args =  [(lifter, self.certificateTemplate, self.GUID) for lifter in self.lifterData]
+        results1 = pool1.map(pdfgen.createCetificates, args)
+
+
+        args =  [(lifter, self.speakerTemplate, self.GUID) for lifter in self.lifterData]
+        results2 = pool1.map(pdfgen.createSpeaker, args)
+
+        # close the pool and wait for the work to finish
+        pool1.close()
+        pool1.join()
+
+        print(results1,results2)
+
+        convert(f'c:\\temp\\{self.GUID}')
+
+
+
+        merger1 = PdfMerger()
+        # Iterate through each PDF file path in the list and add it to the merger
+        for pdf in results1:
+            merger1.append(pdf.replace('.docx','.pdf'))
+        # Write the merged PDF to a file
+        merger1.write('certificates.pdf')
+
+
+        merger2 = PdfMerger()
+        # Iterate through each PDF file path in the list and add it to the merger
+        for pdf in results2:
+            merger2.append(pdf.replace('.docx','.pdf'))
+        # Write the merged PDF to a file
+        merger2.write('speaker cards.pdf')
+
+        # for lifter in self.lifterData:
+        #     self.createCetificates(lifter)
+        #     self.createSpeaker(lifter)
 
         self.log("~~~~~~~~~~~~~~~~~\nCompleted!\n~~~~~~~~~~~~~~~~~")
+
+class PDFGenerator:
+    def __init__(self):
+        self.speakerPDFs = []
+        self.certificatePDFs= []
+    def createSpeaker(self, data):
+        lifter, speakerTemplate, GUID = data
+        # Create a new Word document based on the provided template
+        doc = Document(speakerTemplate)
+
+
+        name = f'{lifter["First name"]} {lifter["Last name"]}'
+        dob = lifter["DOB"].strftime("%d/%m/%Y")
+        
+        #spaces are so it doesn't replace other numbers in the template
+        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzDOBzz=dob, zzNATIONzz=lifter["Nation"], zzLOTzz=lifter["Lot"]+"   "))
+
+        # Log that a speaker card is being generated for the current row
+        # self.log(f'Generating speaker card for {name}')
+
+        # Save the current document as a Word file and convert it to PDF
+        doc.save(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
+        return(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
+        # convert(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
+        # # Add the path of the generated PDF to the list
+        # self.speakerPDFs.append(f'c:\\temp\\{GUID}\\speaker_{name}.pdf')
+
+        # Log that a speaker card has been generated for the current row
+        # self.log(f'Generated certificate for {name}')
+
+        # Replace placeholder values in the Word document with empty strings to revert back to the original template
+        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzDOBzz=dob, zzNATIONzz=lifter["Nation"], zzLOTzz=lifter["Lot"]+"   "), True)
+
+        # # Log that the speaker cards are being merged into a single PDF
+        # self.log(f'Merging speaker card PDFs')
+
+        # # Create a new PDF merger object
+        # merger = PdfMerger()
+
+        # # Iterate through each PDF file path in the list and add it to the merger
+        # for pdf in allPDFs:
+        #     merger.append(pdf)
+
+        # # Write the merged PDF to a file
+        # merger.write('speakercards.pdf')
+
+        # # Log that the speaker cards have been merged into a single PDF
+        # self.log(f'Speaker Cards merged into one PDF')
+
+    def createCetificates(self, data):
+        """
+        Processes the data in the Excel workbook and generates certificates for each row of data.
+        Merges all generated certificates into a single PDF file.
+
+        Returns:
+        None
+        """
+        lifter, certificateTemplate, GUID = data
+        # Create a new Word document based on the provided template
+        doc = Document(certificateTemplate)
+
+        # Initialize a list to store the paths of all generated PDFs
+
+
+        # # Iterate through each row of data in the worksheet
+        # for l in self.lifterData:
+
+        name = f'{lifter["First name"]} {lifter["Last name"]}'
+
+        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzGENDERzz=lifter["Gender"], zzDIVzz=lifter["Age"], zzEQUIPzz=lifter["Raw"]))
+
+        # Log that a certificate is being generated for the current row
+        # self.log(f'Generating certificate for {name}')
+
+        # Save the current document as a Word file and convert it to PDF
+        doc.save(f'c:\\temp\\{GUID}\\certificate_{name}.docx')
+        return (f'c:\\temp\\{GUID}\\certificate_{name}.docx')
+        # convert(f'c:\\temp\\{GUID}\\certificate_{name}.docx')
+        # # Add the path of the generated PDF to the list
+        # self.certificatePDFs.append(f'c:\\temp\\{GUID}\\certificate_{name}.pdf')
+
+        # Log that a certificate has been generated for the current row
+        # self.log(f'Generated certificate for {name}')
+
+        # Replace placeholder values in the Word document with empty strings to revert back to the original template
+        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzGENDERzz=lifter["Gender"], zzDIVzz=lifter["Age"], zzEQUIPzz=lifter["Raw"]), True)
+
+        # # Log that the certificates are being merged into a single PDF
+        # self.log(f'Merging Certificate PDFs')
+
+        # # Create a new PDF merger object
+        # merger = PdfMerger()
+
+        # # Iterate through each PDF file path in the list and add it to the merger
+        # for pdf in allPDFs:
+        #     merger.append(pdf)
+
+        # # Write the merged PDF to a file
+        # merger.write('certificates.pdf')
+
+        # # Log that the certificates have been merged into a single PDF
+        # self.log(f'Certificates merged into one PDF')
+
+
+    def findReplaceTable(self, doc, data, revert=False):
+        """
+        Find and replace text in tables in a Word document.
+
+        Arguments:
+        - doc: a `docx.Document` object representing the Word document to modify
+        - data: a dictionary containing the text to find and its replacement
+        - revert: if `True`, the find and replace arguments will be swapped
+            (default: False)
+
+        Returns:
+        - None
+
+        """
+        # If revert is True, swap find and replace arguments
+        if revert:
+            data = {v: k for k, v in data.items()}
+
+        # Loop over the tables in the document
+        for table in doc.tables:
+            # Loop over the rows in the table
+            for row in table.rows:
+                # Loop over the cells in the row
+                for cell in row.cells:
+                    # If the find text is in the cell, loop over the paragraphs in the cell
+                    if any(find in cell.text for find in data.keys()):
+                        for p in cell.paragraphs:
+                            # If the find text is in the paragraph, loop over the runs in the paragraph
+                            if any(find in p.text for find in data.keys()):
+                                for run in p.runs:
+                                    # If the find text is in the run, replace it with the replacement text
+                                    if any(find in run.text for find in data.keys()):
+                                        for find, replace in data.items():
+                                            run.text = run.text.replace(find, replace)
+        
+
+
 
 
 if __name__ == '__main__':
     app = CPA_Cert_Generator()
     app.mainloop()
+    print()
