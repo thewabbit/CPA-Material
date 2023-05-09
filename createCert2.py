@@ -3,9 +3,9 @@ import os
 import random
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, Label, Button
-from docx import Document
-from PyPDF2 import PdfMerger
-from docx2pdf import convert
+import docx
+import PyPDF2
+import docx2pdf
 import openpyxl
 import re
 import uuid
@@ -20,27 +20,30 @@ class CPA_Cert_Generator (tk.Tk):
         self.GUID = ""
         self.lots = {}
         self.days = 0
+        self.eventName = ""
 
         # Set the initial values of the template and lifterData attributes to None.
         self.templateNames = {
             "certificateTemplate":"3LIFT CERT TEMPLATE.docx",
             "speakerTemplate":"SPEAKER TEMPLATE.docx",
-            "weighinTemplate":"WEIGH IN TEMPLATE.docx"
+            "weighinTemplate":"WEIGH IN TEMPLATE.docx",
+            "gearcheckTemplate":"GEAR CHECK TEMPLATE.docx",
+            "manualscorecardTemplate":"MANUAL SCORESHEET TEMPLATE.docx"
+
         }
 
         self.certificateTemplate = None
         self.speakerTemplate = None
         self.weighinTemplate = None
+        self.gearcheckTemplate = None
         self.lifterDataInput = None
+        self.manualscorecardTemplate = None
 
         self.certificatePDFs = []
         self.speakerPDFs = []
-        # testing
-        # self.certificateTemplate = r'G:\My Drive\Documents\Powerlifting\CPA\Create Certificates\Templates\3LIFT CERT TEMPLATE.docx'
-        # self.lifterDataInput = r'G:\My Drive\Documents\Powerlifting\CPA\Create Certificates\Inputs\Copy of Provincials 2023 final nominations2.xlsx'
 
         # Set the size, background color, and title of the window.
-        self.geometry('580x580')
+        self.geometry('580x720')
         self.configure(background='#FAEBD7')
         self.title('CPA Certificate Generator')
 
@@ -52,7 +55,7 @@ class CPA_Cert_Generator (tk.Tk):
 
         # Set up the logging text box and configure it with tags for different message types.
         self.logBox = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=60, height=10, font=self.logFont)
-        self.logBox.place(x=40, y=398)
+        self.logBox.place(x=40, y=520)
         self.logBox.insert(tk.INSERT, 'Please select files \n')
         self.logBox.configure(state='disabled')
         self.logBox.tag_configure('error', foreground='red')
@@ -68,23 +71,31 @@ class CPA_Cert_Generator (tk.Tk):
             label = Label(parent, name=name, text=text, bg='#FAEBD7', font=self.pathFont)
             label.place(x=x, y=y)
             return label
+        
+        self.eventNameField = tk.Entry(self, font=self.labelFont)
+        self.eventNameField.place(x=150,y=20)
+        self.eventNameLabel = create_label(self, 'eventNameLabel', 'Event Name', 40, 20)
 
-        self.LifterDataButton = create_button(self, 'lifterDataButton', 'Select Lifter Data', 40, 38, self.selectLifterData)
-        self.selectedLifterData = create_label(self, 'selectedLifterData', '<please select file>', 40, 78)
+        self.LifterDataButton = create_button(self, 'lifterDataButton', 'Select Lifter Data', 40, 60, self.selectLifterData)
+        self.selectedLifterData = create_label(self, 'selectedLifterData', '<please select file>', 40, 100)
 
-        self.certificateTemplateButton = create_button(self, 'certificateTemplateButton', 'Select Certificate Template File', 40, 118, self.selectCertificateTemplate)
-        self.selectedCertificateTemplate = create_label(self, 'selectedCertificateTemplate', '<please select file>', 40, 158)
+        self.certificateTemplateButton = create_button(self, 'certificateTemplateButton', 'Select Certificate Template File', 40, 130, self.selectCertificateTemplate)
+        self.selectedCertificateTemplate = create_label(self, 'selectedCertificateTemplate', '<please select file>', 40, 170)
 
-        self.speakerTemplateButton = create_button(self, 'speakerTemplateButton', 'Select Speaker Card Template File', 40, 198, self.selectSpeakerTemplate)
-        self.selectedSpeakerTemplate = create_label(self, 'selectedSpeakerTemplate', '<please select file>', 40, 238)
+        self.speakerTemplateButton = create_button(self, 'speakerTemplateButton', 'Select Speaker Card Template File', 40, 200, self.selectSpeakerTemplate)
+        self.selectedSpeakerTemplate = create_label(self, 'selectedSpeakerTemplate', '<please select file>', 40, 240)
 
-        self.weighinTemplateButton = create_button(self, 'weighinTemplateButton', 'Select Weigh In Template File', 40, 278, self.selectWeighinTemplate)
-        self.selectedWeighinTemplate = create_label(self, 'selectedWeighinTemplate', '<please select file>', 40, 318)
+        self.weighinTemplateButton = create_button(self, 'weighinTemplateButton', 'Select Weigh In Template File', 40, 270, self.selectWeighinTemplate)
+        self.selectedWeighinTemplate = create_label(self, 'selectedWeighinTemplate', '<please select file>', 40, 310)
 
+        self.gearcheckTemplateButton = create_button(self, 'gearcheckTemplateButton', 'Select Gear Check Template File', 40, 340, self.selectGearcheckTemplate)
+        self.selectedGearcheckTemplate = create_label(self, 'selectedGearcheckTemplate', '<please select file>', 40, 380)
 
+        self.manualscorecardTemplateButton = create_button(self, 'manualscorecardTemplateButton', 'Select Manual Score Card Template File', 40, 410, self.selectManualScoreCardTemplate)
+        self.selectedManualscorecardTemplate = create_label(self, 'selectedManualscorecardTemplate', '<please select file>', 40, 450)
 
         self.runButton = Button(self, text='Create files', bg='#FAEBD7', font=self.buttonFont, command=self.run)
-        self.runButton.place(x=40, y=358)
+        self.runButton.place(x=40, y=480)
 
         self.templateScan()
 
@@ -96,7 +107,7 @@ class CPA_Cert_Generator (tk.Tk):
                 v1 = f"selected{k[0].upper() + k[1:]}"
                 getattr(self, v1).configure(text = v)
 
-
+    
     def selectLifterData(self):
         # Open a file dialog box to allow the user to select the lifter data Excel file
         self.lifterDataInput = filedialog.askopenfilename(filetypes=[('Lifter data', '*.xlsx')])
@@ -135,7 +146,28 @@ class CPA_Cert_Generator (tk.Tk):
         self.selectedWeighinTemplate.configure(text = os.path.split(self.weighinTemplate)[1])
         
         # Log the selected file path in the log box
-        self.log(f'selected template:\n{self.speakerTemplate}')
+        self.log(f'selected template:\n{self.weighinTemplate}')
+
+    def selectGearcheckTemplate(self):
+        # Open a file dialog box to allow the user to select the certificate template Word file
+        self.gearcheckTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
+        
+        # Update the GUI to show the selected file name
+        self.selectedGearcheckTemplate.configure(text = os.path.split(self.gearcheckTemplate)[1])
+        
+        # Log the selected file path in the log box
+        self.log(f'selected template:\n{self.gearcheckTemplate}')
+
+    def selectManualScoreCardTemplate(self):
+        # Open a file dialog box to allow the user to select the certificate template Word file
+        self.manualscorecardTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
+        
+        # Update the GUI to show the selected file name
+        self.selectedManualscorecardTemplate.configure(text = os.path.split(self.manualscorecardTemplate)[1])
+        
+        # Log the selected file path in the log box
+        self.log(f'selected template:\n{self.manualscorecardTemplate}')
+
 
     def log(self, message, level='info'):
         """
@@ -161,6 +193,8 @@ class CPA_Cert_Generator (tk.Tk):
 
     def proccessData(self):
         self.log('compiling lifter input data')
+
+        self.eventName = self.eventNameField.get()
 
         # Load the Excel workbook and select the active worksheet
         wb = openpyxl.load_workbook(self.lifterDataInput)
@@ -218,6 +252,56 @@ class CPA_Cert_Generator (tk.Tk):
         #get number of days
         self.days = max(list(set(item["Day"] for item in self.lifterData)))
 
+    def findReplaceParagraph(self, doc, data, revert=False):
+        # If revert is True, swap find and replace arguments
+        if revert:
+            data = {v: k for k, v in data.items()}
+
+        for paragraph in doc.paragraphs:
+            for key, value in data.items():
+                if key in paragraph.text:
+                    for run in paragraph.runs:
+                        if key in run.text:
+                            run.text = run.text.replace(key, value)
+
+    def createGearCheck(self):
+        allPDFs = []
+        self.log("Creating gear check sheets")
+        for i in range(0,self.days):
+            i += 1
+            curDay = [d for d in self.lifterData if d['Day'] == i]
+
+            self.log(f"Gear check day {i}")
+
+            doc = docx.Document(self.gearcheckTemplate)
+            table = doc.tables[0]
+            for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
+                rc = table.add_row().cells
+                rc[0].text = f"{j['First name']} {j['Last name']}"  
+        
+            
+            self.findReplaceParagraph(doc,dict(zzEVENTzz=self.eventName,zzSESSIONzz=str(i)))
+
+            doc.save(f'c:\\temp\\{self.GUID}\\gear_check{str(i)}.docx')
+
+            docx2pdf.convert(f'c:\\temp\\{self.GUID}\\gear_check{str(i)}.docx')
+
+            # Add the path of the generated PDF to the list
+            allPDFs.append(f'c:\\temp\\{self.GUID}\\gear_check{str(i)}.pdf')
+        
+        
+
+        # Create a new PDF merger object
+        merger = PyPDF2.PdfMerger()
+
+        # Iterate through each PDF file path in the list and add it to the merger
+        for pdf in allPDFs:
+            merger.append(pdf)
+
+        # Write the merged PDF to a file
+        merger.write('gear check.pdf')
+        self.log("Gear check created")
+
     def createWeighIn(self):
         allPDFs = []
         self.log("Creating weigh ins")
@@ -227,7 +311,7 @@ class CPA_Cert_Generator (tk.Tk):
 
             self.log(f"Weigh ins day {i}")
 
-            doc = Document(self.weighinTemplate)
+            doc = docx.Document(self.weighinTemplate)
             table = doc.tables[0]
             for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
                 rc = table.add_row().cells
@@ -237,14 +321,16 @@ class CPA_Cert_Generator (tk.Tk):
                 rc[3].text = j['Lot']            
             
             doc.save(f'c:\\temp\\{self.GUID}\\weigh_in_day_{str(i)}.docx')
-            convert(f'c:\\temp\\{self.GUID}\\weigh_in_day_{str(i)}.docx')
+
+            docx2pdf.convert(f'c:\\temp\\{self.GUID}\\weigh_in_day_{str(i)}.docx')
+
             # Add the path of the generated PDF to the list
             allPDFs.append(f'c:\\temp\\{self.GUID}\\weigh_in_day_{str(i)}.pdf')
 
-            
+        
         
         # Create a new PDF merger object
-        merger = PdfMerger()
+        merger = PyPDF2.PdfMerger()
 
         # Iterate through each PDF file path in the list and add it to the merger
         for pdf in allPDFs:
@@ -254,51 +340,95 @@ class CPA_Cert_Generator (tk.Tk):
         merger.write('weigh in.pdf')
         self.log("Weigh ins created")
         
+    def runLifterSpecific(self):
+
+        self.log(f"Generating certificates and speaker cards\nThis will take a couple of minutes")
+        pool1= multiprocessing.Pool(processes=2)
+
+        pdfgen = PDFGenerator()
+
+        args =  [(lifter, self.certificateTemplate, self.GUID) for lifter in self.lifterData]
+        resultsCert = pool1.map(pdfgen.createCetificates, args)
+        args =  [(lifter, self.speakerTemplate, self.GUID) for lifter in self.lifterData]
+        resultsSpeaker = pool1.map(pdfgen.createSpeaker, args)
+
+        # close the pool and wait for the work to finish
+        pool1.close()
+        pool1.join()
+
+        #docx2pdf.convert all docx in temp dir to pdfs
+        docx2pdf.convert(f'c:\\temp\\{self.GUID}')
+
+
+        merger1 = PyPDF2.PdfMerger()
+        # Iterate through each PDF file path in the list and add it to the merger
+        for pdf in resultsCert:
+            merger1.append(pdf.replace('.docx','.pdf'))
+        # Write the merged PDF to a file
+        merger1.write('certificates.pdf')
+
+
+        merger2 = PyPDF2.PdfMerger()
+        # Iterate through each PDF file path in the list and add it to the merger
+        for pdf in resultsSpeaker:
+            merger2.append(pdf.replace('.docx','.pdf'))
+        # Write the merged PDF to a file
+        merger2.write('speaker cards.pdf')
+
+        self.log(f"Finished generating certificates and speaker cards")
+
+    def createManualScoreSheet(self):
+            allPDFs = []
+            self.log("Creating manual scoresheets")
+            for i in range(0,self.days):
+                i += 1
+                curDay = [d for d in self.lifterData if d['Day'] == i]
+
+                self.log(f"Scoresheet day {i}")
+
+                doc = docx.Document(self.manualscorecardTemplate)
+                table = doc.tables[0]
+                for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
+                    rc = table.add_row().cells
+                    rc[0].text = f"{j['First name']} {j['Last name']}"  
+                    rc[1].text = f"" #teamS
+                    rc[2].text = f"{j['Age']}"
+                    rc[3].text = f"{j['Lot']}"
+                    rc[5].text = f"{j['Weight']}"
+            
+                
+                self.findReplaceParagraph(doc,dict(zzEVENTzz=self.eventName,zzSESSIONzz=str(i)))
+
+                doc.save(f'c:\\temp\\{self.GUID}\\manual_scoresheet{str(i)}.docx')
+
+                docx2pdf.convert(f'c:\\temp\\{self.GUID}\\manual_scoresheet{str(i)}.docx')
+
+                # Add the path of the generated PDF to the list
+                allPDFs.append(f'c:\\temp\\{self.GUID}\\manual_scoresheet{str(i)}.pdf')
+            
+            
+
+            # Create a new PDF merger object
+            merger = PyPDF2.PdfMerger()
+
+            # Iterate through each PDF file path in the list and add it to the merger
+            for pdf in allPDFs:
+                merger.append(pdf)
+
+            # Write the merged PDF to a file
+            merger.write('manual scoresheet.pdf')
+            self.log("Scoresheet created")
+
 
     def run(self):
         self.proccessData()
         self.GUID = str(uuid.uuid4())
         os.mkdir(f'c:\\temp\\{self.GUID}\\')
 
-        pool1= multiprocessing.Pool(processes=2)
-
-        pdfgen = PDFGenerator()
-
-        args =  [(lifter, self.certificateTemplate, self.GUID) for lifter in self.lifterData]
-        results1 = pool1.map(pdfgen.createCetificates, args)
-
-
-        args =  [(lifter, self.speakerTemplate, self.GUID) for lifter in self.lifterData]
-        results2 = pool1.map(pdfgen.createSpeaker, args)
-
-        # close the pool and wait for the work to finish
-        pool1.close()
-        pool1.join()
-
-        print(results1,results2)
-
-        convert(f'c:\\temp\\{self.GUID}')
-
-
-
-        merger1 = PdfMerger()
-        # Iterate through each PDF file path in the list and add it to the merger
-        for pdf in results1:
-            merger1.append(pdf.replace('.docx','.pdf'))
-        # Write the merged PDF to a file
-        merger1.write('certificates.pdf')
-
-
-        merger2 = PdfMerger()
-        # Iterate through each PDF file path in the list and add it to the merger
-        for pdf in results2:
-            merger2.append(pdf.replace('.docx','.pdf'))
-        # Write the merged PDF to a file
-        merger2.write('speaker cards.pdf')
-
-        # for lifter in self.lifterData:
-        #     self.createCetificates(lifter)
-        #     self.createSpeaker(lifter)
+        self.runLifterSpecific()
+        self.createWeighIn()
+        self.createGearCheck()
+        self.createManualScoreSheet()
 
         self.log("~~~~~~~~~~~~~~~~~\nCompleted!\n~~~~~~~~~~~~~~~~~")
 
@@ -308,8 +438,8 @@ class PDFGenerator:
         self.certificatePDFs= []
     def createSpeaker(self, data):
         lifter, speakerTemplate, GUID = data
-        # Create a new Word document based on the provided template
-        doc = Document(speakerTemplate)
+        # Create a new Word docx.document based on the provided template
+        doc = docx.Document(speakerTemplate)
 
 
         name = f'{lifter["First name"]} {lifter["Last name"]}'
@@ -318,96 +448,25 @@ class PDFGenerator:
         #spaces are so it doesn't replace other numbers in the template
         self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzDOBzz=dob, zzNATIONzz=lifter["Nation"], zzLOTzz=lifter["Lot"]+"   "))
 
-        # Log that a speaker card is being generated for the current row
-        # self.log(f'Generating speaker card for {name}')
-
-        # Save the current document as a Word file and convert it to PDF
         doc.save(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
         return(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
-        # convert(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
-        # # Add the path of the generated PDF to the list
-        # self.speakerPDFs.append(f'c:\\temp\\{GUID}\\speaker_{name}.pdf')
-
-        # Log that a speaker card has been generated for the current row
-        # self.log(f'Generated certificate for {name}')
-
-        # Replace placeholder values in the Word document with empty strings to revert back to the original template
-        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzDOBzz=dob, zzNATIONzz=lifter["Nation"], zzLOTzz=lifter["Lot"]+"   "), True)
-
-        # # Log that the speaker cards are being merged into a single PDF
-        # self.log(f'Merging speaker card PDFs')
-
-        # # Create a new PDF merger object
-        # merger = PdfMerger()
-
-        # # Iterate through each PDF file path in the list and add it to the merger
-        # for pdf in allPDFs:
-        #     merger.append(pdf)
-
-        # # Write the merged PDF to a file
-        # merger.write('speakercards.pdf')
-
-        # # Log that the speaker cards have been merged into a single PDF
-        # self.log(f'Speaker Cards merged into one PDF')
 
     def createCetificates(self, data):
-        """
-        Processes the data in the Excel workbook and generates certificates for each row of data.
-        Merges all generated certificates into a single PDF file.
 
-        Returns:
-        None
-        """
         lifter, certificateTemplate, GUID = data
-        # Create a new Word document based on the provided template
-        doc = Document(certificateTemplate)
 
-        # Initialize a list to store the paths of all generated PDFs
-
-
-        # # Iterate through each row of data in the worksheet
-        # for l in self.lifterData:
+        doc = docx.Document(certificateTemplate)
 
         name = f'{lifter["First name"]} {lifter["Last name"]}'
 
         self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzGENDERzz=lifter["Gender"], zzDIVzz=lifter["Age"], zzEQUIPzz=lifter["Raw"]))
 
-        # Log that a certificate is being generated for the current row
-        # self.log(f'Generating certificate for {name}')
-
-        # Save the current document as a Word file and convert it to PDF
         doc.save(f'c:\\temp\\{GUID}\\certificate_{name}.docx')
         return (f'c:\\temp\\{GUID}\\certificate_{name}.docx')
-        # convert(f'c:\\temp\\{GUID}\\certificate_{name}.docx')
-        # # Add the path of the generated PDF to the list
-        # self.certificatePDFs.append(f'c:\\temp\\{GUID}\\certificate_{name}.pdf')
-
-        # Log that a certificate has been generated for the current row
-        # self.log(f'Generated certificate for {name}')
-
-        # Replace placeholder values in the Word document with empty strings to revert back to the original template
-        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzGENDERzz=lifter["Gender"], zzDIVzz=lifter["Age"], zzEQUIPzz=lifter["Raw"]), True)
-
-        # # Log that the certificates are being merged into a single PDF
-        # self.log(f'Merging Certificate PDFs')
-
-        # # Create a new PDF merger object
-        # merger = PdfMerger()
-
-        # # Iterate through each PDF file path in the list and add it to the merger
-        # for pdf in allPDFs:
-        #     merger.append(pdf)
-
-        # # Write the merged PDF to a file
-        # merger.write('certificates.pdf')
-
-        # # Log that the certificates have been merged into a single PDF
-        # self.log(f'Certificates merged into one PDF')
-
 
     def findReplaceTable(self, doc, data, revert=False):
         """
-        Find and replace text in tables in a Word document.
+        Find and replace text in tables in a Word docx.document.
 
         Arguments:
         - doc: a `docx.Document` object representing the Word document to modify
