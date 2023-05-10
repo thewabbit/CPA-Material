@@ -1,10 +1,10 @@
+import PyPDF2
 import multiprocessing.dummy
 import os
 import random
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, Label, Button
 import docx
-import PyPDF2
 import docx2pdf
 import openpyxl
 import re
