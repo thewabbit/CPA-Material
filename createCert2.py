@@ -1,3 +1,4 @@
+import time
 import PyPDF2
 import multiprocessing.dummy
 import os
@@ -43,7 +44,7 @@ class CPA_Cert_Generator (tk.Tk):
         self.speakerPDFs = []
 
         # Set the size, background color, and title of the window.
-        self.geometry('580x720')
+        self.geometry('800x720')
         self.configure(background='#FAEBD7')
         self.title('CPA Certificate Generator')
 
@@ -54,7 +55,7 @@ class CPA_Cert_Generator (tk.Tk):
         self.logFont = ('courier', 10, 'normal')
 
         # Set up the logging text box and configure it with tags for different message types.
-        self.logBox = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=60, height=10, font=self.logFont)
+        self.logBox = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=85, height=10, font=self.logFont)
         self.logBox.place(x=40, y=520)
         self.logBox.insert(tk.INSERT, 'Please select files \n')
         self.logBox.configure(state='disabled')
@@ -73,26 +74,26 @@ class CPA_Cert_Generator (tk.Tk):
             return label
         
         self.eventNameField = tk.Entry(self, font=self.labelFont)
-        self.eventNameField.place(x=150,y=20)
+        self.eventNameField.place(x=40,y=50)
         self.eventNameLabel = create_label(self, 'eventNameLabel', 'Event Name', 40, 20)
 
-        self.LifterDataButton = create_button(self, 'lifterDataButton', 'Select Lifter Data', 40, 60, self.selectLifterData)
-        self.selectedLifterData = create_label(self, 'selectedLifterData', '<please select file>', 40, 100)
+        self.LifterDataButton = create_button(self, 'lifterDataButton', 'Select Lifter Data', 350, 60, self.selectLifterData)
+        self.selectedLifterData = create_label(self, 'selectedLifterData', '<please select file>', 350, 100)
 
-        self.certificateTemplateButton = create_button(self, 'certificateTemplateButton', 'Select Certificate Template File', 40, 130, self.selectCertificateTemplate)
-        self.selectedCertificateTemplate = create_label(self, 'selectedCertificateTemplate', '<please select file>', 40, 170)
+        self.certificateTemplateButton = create_button(self, 'certificateTemplateButton', 'Select Certificate Template File', 350, 130, self.selectCertificateTemplate)
+        self.selectedCertificateTemplate = create_label(self, 'selectedCertificateTemplate', '<please select file>', 350, 170)
 
-        self.speakerTemplateButton = create_button(self, 'speakerTemplateButton', 'Select Speaker Card Template File', 40, 200, self.selectSpeakerTemplate)
-        self.selectedSpeakerTemplate = create_label(self, 'selectedSpeakerTemplate', '<please select file>', 40, 240)
+        self.speakerTemplateButton = create_button(self, 'speakerTemplateButton', 'Select Speaker Card Template File', 350, 200, self.selectSpeakerTemplate)
+        self.selectedSpeakerTemplate = create_label(self, 'selectedSpeakerTemplate', '<please select file>', 350, 240)
 
-        self.weighinTemplateButton = create_button(self, 'weighinTemplateButton', 'Select Weigh In Template File', 40, 270, self.selectWeighinTemplate)
-        self.selectedWeighinTemplate = create_label(self, 'selectedWeighinTemplate', '<please select file>', 40, 310)
+        self.weighinTemplateButton = create_button(self, 'weighinTemplateButton', 'Select Weigh In Template File', 350, 270, self.selectWeighinTemplate)
+        self.selectedWeighinTemplate = create_label(self, 'selectedWeighinTemplate', '<please select file>', 350, 310)
 
-        self.gearcheckTemplateButton = create_button(self, 'gearcheckTemplateButton', 'Select Gear Check Template File', 40, 340, self.selectGearcheckTemplate)
-        self.selectedGearcheckTemplate = create_label(self, 'selectedGearcheckTemplate', '<please select file>', 40, 380)
+        self.gearcheckTemplateButton = create_button(self, 'gearcheckTemplateButton', 'Select Gear Check Template File', 350, 340, self.selectGearcheckTemplate)
+        self.selectedGearcheckTemplate = create_label(self, 'selectedGearcheckTemplate', '<please select file>', 350, 380)
 
-        self.manualscorecardTemplateButton = create_button(self, 'manualscorecardTemplateButton', 'Select Manual Score Card Template File', 40, 410, self.selectManualScoreCardTemplate)
-        self.selectedManualscorecardTemplate = create_label(self, 'selectedManualscorecardTemplate', '<please select file>', 40, 450)
+        self.manualscorecardTemplateButton = create_button(self, 'manualscorecardTemplateButton', 'Select Manual Score Card Template File', 350, 410, self.selectManualScoreCardTemplate)
+        self.selectedManualscorecardTemplate = create_label(self, 'selectedManualscorecardTemplate', '<please select file>', 350, 450)
 
         self.runButton = Button(self, text='Create files', bg='#FAEBD7', font=self.buttonFont, command=self.run)
         self.runButton.place(x=40, y=480)
@@ -282,7 +283,9 @@ class CPA_Cert_Generator (tk.Tk):
             
             self.findReplaceParagraph(doc,dict(zzEVENTzz=self.eventName,zzSESSIONzz=str(i)))
 
+            time.sleep(0.5)
             doc.save(f'c:\\temp\\{self.GUID}\\gear_check{str(i)}.docx')
+            time.sleep(0.5)
 
             docx2pdf.convert(f'c:\\temp\\{self.GUID}\\gear_check{str(i)}.docx')
 
@@ -320,7 +323,9 @@ class CPA_Cert_Generator (tk.Tk):
                 rc[2].text = f"{j['First name']} {j['Last name']}"
                 rc[3].text = j['Lot']            
             
+            time.sleep(0.5)
             doc.save(f'c:\\temp\\{self.GUID}\\weigh_in_day_{str(i)}.docx')
+            time.sleep(0.5)
 
             docx2pdf.convert(f'c:\\temp\\{self.GUID}\\weigh_in_day_{str(i)}.docx')
 
@@ -343,7 +348,7 @@ class CPA_Cert_Generator (tk.Tk):
     def runLifterSpecific(self):
 
         self.log(f"Generating certificates and speaker cards\nThis will take a couple of minutes")
-        pool1= multiprocessing.Pool(processes=2)
+        pool1= multiprocessing.Pool(processes=multiprocessing.cpu_count())
 
         pdfgen = PDFGenerator()
 
@@ -399,7 +404,9 @@ class CPA_Cert_Generator (tk.Tk):
                 
                 self.findReplaceParagraph(doc,dict(zzEVENTzz=self.eventName,zzSESSIONzz=str(i)))
 
+                time.sleep(0.5)
                 doc.save(f'c:\\temp\\{self.GUID}\\manual_scoresheet{str(i)}.docx')
+                time.sleep(0.5)
 
                 docx2pdf.convert(f'c:\\temp\\{self.GUID}\\manual_scoresheet{str(i)}.docx')
 
@@ -448,7 +455,9 @@ class PDFGenerator:
         #spaces are so it doesn't replace other numbers in the template
         self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzDOBzz=dob, zzNATIONzz=lifter["Nation"], zzLOTzz=lifter["Lot"]+"   "))
 
+        time.sleep(0.1)
         doc.save(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
+        time.sleep(0.1)
         return(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
 
     def createCetificates(self, data):
@@ -461,7 +470,9 @@ class PDFGenerator:
 
         self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzGENDERzz=lifter["Gender"], zzDIVzz=lifter["Age"], zzEQUIPzz=lifter["Raw"]))
 
+        time.sleep(0.1)
         doc.save(f'c:\\temp\\{GUID}\\certificate_{name}.docx')
+        time.sleep(0.1)
         return (f'c:\\temp\\{GUID}\\certificate_{name}.docx')
 
     def findReplaceTable(self, doc, data, revert=False):
@@ -504,6 +515,7 @@ class PDFGenerator:
 
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     app = CPA_Cert_Generator()
     app.mainloop()
     print()
