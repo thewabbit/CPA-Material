@@ -1,15 +1,21 @@
-import time
-import PyPDF2
+import datetime
 import multiprocessing.dummy
 import os
 import random
+import re
+import shutil
+import time
 import tkinter as tk
-from tkinter import filedialog, scrolledtext, Label, Button
+import uuid
+from tkinter import Button, Label, filedialog, scrolledtext
+import json
+
 import docx
 import docx2pdf
 import openpyxl
-import re
-import uuid
+import PyPDF2
+import tkcalendar
+
 
 class CPA_Cert_Generator (tk.Tk):
     def __init__(self):
@@ -19,9 +25,11 @@ class CPA_Cert_Generator (tk.Tk):
 
         self.lifterData =[]
         self.GUID = ""
+        self.temp = "c:\\temp\\"
         self.lots = {}
         self.days = 0
         self.eventName = ""
+        self.eventDate = ""
 
         # Set the initial values of the template and lifterData attributes to None.
         self.templateNames = {
@@ -29,8 +37,8 @@ class CPA_Cert_Generator (tk.Tk):
             "speakerTemplate":"SPEAKER TEMPLATE.docx",
             "weighinTemplate":"WEIGH IN TEMPLATE.docx",
             "gearcheckTemplate":"GEAR CHECK TEMPLATE.docx",
-            "manualscorecardTemplate":"MANUAL SCORESHEET TEMPLATE.docx"
-
+            "manualscorecardTemplate":"MANUAL SCORESHEET TEMPLATE.docx",
+            "olTemplate":"TEMPLATE.openlifter"
         }
 
         self.certificateTemplate = None
@@ -39,6 +47,7 @@ class CPA_Cert_Generator (tk.Tk):
         self.gearcheckTemplate = None
         self.lifterDataInput = None
         self.manualscorecardTemplate = None
+        self.olTemplate = None
 
         self.certificatePDFs = []
         self.speakerPDFs = []
@@ -77,6 +86,13 @@ class CPA_Cert_Generator (tk.Tk):
         self.eventNameField.place(x=40,y=50)
         self.eventNameLabel = create_label(self, 'eventNameLabel', 'Event Name', 40, 20)
 
+        self.eventDateField = tkcalendar.DateEntry(self, date_pattern='yyyy-mm-dd')
+        self.eventDateField.place(x=40,y=110)
+        self.eventDateLabel = create_label(self, 'eventDateLabel', 'Event Starting Date', 40, 80)
+
+        self.OLTemplateButton = create_button(self, 'olTemplateButton', 'Select Openlifter Template', 40, 150, self.selectOLTemplate)
+        self.selectedOlTemplate = create_label(self, 'selectedOlTemplate', '<please select file>', 40, 190)
+
         self.LifterDataButton = create_button(self, 'lifterDataButton', 'Select Lifter Data', 350, 60, self.selectLifterData)
         self.selectedLifterData = create_label(self, 'selectedLifterData', '<please select file>', 350, 100)
 
@@ -108,6 +124,15 @@ class CPA_Cert_Generator (tk.Tk):
                 v1 = f"selected{k[0].upper() + k[1:]}"
                 getattr(self, v1).configure(text = v)
 
+    def selectOLTemplate(self):
+        # Open a file dialog box to allow the user to select the lifter data Excel file
+        self.olTemplate = filedialog.askopenfilename(filetypes=[('OL Template', '*.openlifter')])
+        
+        # Update the GUI to show the selected file name
+        self.selectedOlTemplate.configure(text = os.path.split(self.olTemplate)[1])
+        
+        # Log the selected file path in the log box
+        self.log(f'selected input data:\n{self.olTemplate}')
     
     def selectLifterData(self):
         # Open a file dialog box to allow the user to select the lifter data Excel file
@@ -284,13 +309,14 @@ class CPA_Cert_Generator (tk.Tk):
             self.findReplaceParagraph(doc,dict(zzEVENTzz=self.eventName,zzSESSIONzz=str(i)))
 
             time.sleep(0.5)
-            doc.save(f'c:\\temp\\{self.GUID}\\gear_check{str(i)}.docx')
+            path = os.path.join(self.temp, self.GUID, f'gear_check_{str(i)}.docx')
+            doc.save(path)
             time.sleep(0.5)
 
-            docx2pdf.convert(f'c:\\temp\\{self.GUID}\\gear_check{str(i)}.docx')
+            docx2pdf.convert(path)
 
             # Add the path of the generated PDF to the list
-            allPDFs.append(f'c:\\temp\\{self.GUID}\\gear_check{str(i)}.pdf')
+            allPDFs.append(os.path.join(self.temp, self.GUID, f'gear_check_{str(i)}.pdf'))
         
         
 
@@ -324,13 +350,14 @@ class CPA_Cert_Generator (tk.Tk):
                 rc[3].text = j['Lot']            
             
             time.sleep(0.5)
-            doc.save(f'c:\\temp\\{self.GUID}\\weigh_in_day_{str(i)}.docx')
+            path = os.path.join(self.temp, self.GUID, f'weigh_in_day_{str(i)}.docx')
+            doc.save(path)
             time.sleep(0.5)
 
-            docx2pdf.convert(f'c:\\temp\\{self.GUID}\\weigh_in_day_{str(i)}.docx')
+            docx2pdf.convert(path)
 
             # Add the path of the generated PDF to the list
-            allPDFs.append(f'c:\\temp\\{self.GUID}\\weigh_in_day_{str(i)}.pdf')
+            allPDFs.append(os.path.join(self.temp, self.GUID, f'weigh_in_day_{str(i)}.pdf'))
 
         
         
@@ -352,9 +379,9 @@ class CPA_Cert_Generator (tk.Tk):
 
         pdfgen = PDFGenerator()
 
-        args =  [(lifter, self.certificateTemplate, self.GUID) for lifter in self.lifterData]
+        args =  [(lifter, self.certificateTemplate, self.GUID, self.temp) for lifter in self.lifterData]
         resultsCert = pool1.map(pdfgen.createCetificates, args)
-        args =  [(lifter, self.speakerTemplate, self.GUID) for lifter in self.lifterData]
+        args =  [(lifter, self.speakerTemplate, self.GUID, self.temp) for lifter in self.lifterData]
         resultsSpeaker = pool1.map(pdfgen.createSpeaker, args)
 
         # close the pool and wait for the work to finish
@@ -362,8 +389,7 @@ class CPA_Cert_Generator (tk.Tk):
         pool1.join()
 
         #docx2pdf.convert all docx in temp dir to pdfs
-        docx2pdf.convert(f'c:\\temp\\{self.GUID}')
-
+        docx2pdf.convert(os.path.join(self.temp,self.GUID))
 
         merger1 = PyPDF2.PdfMerger()
         # Iterate through each PDF file path in the list and add it to the merger
@@ -405,13 +431,13 @@ class CPA_Cert_Generator (tk.Tk):
                 self.findReplaceParagraph(doc,dict(zzEVENTzz=self.eventName,zzSESSIONzz=str(i)))
 
                 time.sleep(0.5)
-                doc.save(f'c:\\temp\\{self.GUID}\\manual_scoresheet{str(i)}.docx')
+                path = os.path.join(self.temp, self.GUID, f'manual_scoresheet_{str(i)}.docx')
+                doc.save(path)
                 time.sleep(0.5)
-
-                docx2pdf.convert(f'c:\\temp\\{self.GUID}\\manual_scoresheet{str(i)}.docx')
+                docx2pdf.convert(path)
 
                 # Add the path of the generated PDF to the list
-                allPDFs.append(f'c:\\temp\\{self.GUID}\\manual_scoresheet{str(i)}.pdf')
+                allPDFs.append(os.path.join(self.temp, self.GUID, f'manual_scoresheet_{str(i)}.pdf'))
             
             
 
@@ -426,25 +452,59 @@ class CPA_Cert_Generator (tk.Tk):
             merger.write('manual scoresheet.pdf')
             self.log("Scoresheet created")
 
+    def cleanUp(self):
+        #seems to have an issues remove locked files
+
+        # time.sleep(5)
+        # shutil.rmtree(os.path.join(self.temp, self.GUID))
+        # self.log("Cleaning up")
+        pass
+
+
+    def createOLData(self):
+        self.eventDate = self.eventDateField.get_date()
+
+        for i in range(0,self.days):
+            i += 1
+            curDay = [d for d in self.lifterData if d['Day'] == i]
+
+            self.log(f"OL Data Day {i}")
+
+            OLTemplate = json.load(open(self.olTemplate))
+
+            OLTemplate["meet"]["name"] = f"{self.eventName} Session {i}"
+
+            dayAdv = (i - 1) // 2
+            date = self.eventDate + datetime.timedelta(days=dayAdv)
+            OLTemplate["meet"]["date"] = date.strftime("%Y-%m-%d")
+            OLTemplate["meet"]["lengthDays"] = 1
+            OLTemplate["meet"]["platformsOnDays"] = [1]
+            
+            with open(f"{self.eventName} Session {i}.openlifter", 'w', newline='') as file:
+                file.write(json.dumps(OLTemplate).replace("'", ""))
 
     def run(self):
         self.proccessData()
         self.GUID = str(uuid.uuid4())
-        os.mkdir(f'c:\\temp\\{self.GUID}\\')
+        os.mkdir(os.path.join(self.temp, self.GUID))
 
-        self.runLifterSpecific()
-        self.createWeighIn()
-        self.createGearCheck()
-        self.createManualScoreSheet()
+
+        self.createOLData()
+        # self.runLifterSpecific()
+        # self.createWeighIn()
+        # self.createGearCheck()
+        # self.createManualScoreSheet()
+        # self.cleanUp()
 
         self.log("~~~~~~~~~~~~~~~~~\nCompleted!\n~~~~~~~~~~~~~~~~~")
+        
 
 class PDFGenerator:
     def __init__(self):
         self.speakerPDFs = []
         self.certificatePDFs= []
     def createSpeaker(self, data):
-        lifter, speakerTemplate, GUID = data
+        lifter, speakerTemplate, GUID, temp = data
         # Create a new Word docx.document based on the provided template
         doc = docx.Document(speakerTemplate)
 
@@ -456,13 +516,14 @@ class PDFGenerator:
         self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzDOBzz=dob, zzNATIONzz=lifter["Nation"], zzLOTzz=lifter["Lot"]+"   "))
 
         time.sleep(0.1)
-        doc.save(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
+        path = os.path.join(temp, GUID, f'speaker_{name}.docx')
+        doc.save(path)
         time.sleep(0.1)
-        return(f'c:\\temp\\{GUID}\\speaker_{name}.docx')
+        return(path)
 
     def createCetificates(self, data):
 
-        lifter, certificateTemplate, GUID = data
+        lifter, certificateTemplate, GUID, temp = data
 
         doc = docx.Document(certificateTemplate)
 
@@ -471,9 +532,10 @@ class PDFGenerator:
         self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzGENDERzz=lifter["Gender"], zzDIVzz=lifter["Age"], zzEQUIPzz=lifter["Raw"]))
 
         time.sleep(0.1)
-        doc.save(f'c:\\temp\\{GUID}\\certificate_{name}.docx')
+        path = os.path.join(temp, GUID, f'certificate_{name}.docx')
+        doc.save(path)
         time.sleep(0.1)
-        return (f'c:\\temp\\{GUID}\\certificate_{name}.docx')
+        return (path)
 
     def findReplaceTable(self, doc, data, revert=False):
         """

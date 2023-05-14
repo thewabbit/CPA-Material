@@ -1,0 +1,134 @@
+{
+    "versions": {
+        "stateVersion": "0",
+        "releaseVersion": "1.1"
+    },
+    "language": "en",
+    "meet": {
+        "name": "",
+        "country": "New Zealand",
+        "state": "Canterbury",
+        "city": "Christchurch",
+        "federation": "NZPF",
+        "date": "",
+        "lengthDays": "",
+        "platformsOnDays": [
+        ],
+        "divisions": [
+            "Open",
+            "Master 1",
+            "Master 2",
+            "Master 3",
+            "Master 4",
+            "Junior",
+            "Sub-Junior"
+        ],
+        "weightClassesKgMen": [
+            53,
+            59,
+            66,
+            74,
+            83,
+            93,
+            105,
+            120
+        ],
+        "weightClassesKgWomen": [
+            43,
+            47,
+            52,
+            57,
+            63,
+            72,
+            84
+        ],
+        "weightClassesKgMx": [],
+        "formula": "IPF GL Points",
+        "ageCoefficients": "None",
+        "combineSleevesAndWraps": false,
+        "allow4thAttempts": false,
+        "inKg": true,
+        "showAlternateUnits": true,
+        "squatBarAndCollarsWeightKg": 25,
+        "benchBarAndCollarsWeightKg": 25,
+        "deadliftBarAndCollarsWeightKg": 25,
+        "plates": [
+            {
+                "weightKg": 50,
+                "pairCount": 0,
+                "color": "#2AB003"
+            },
+            {
+                "weightKg": 25,
+                "pairCount": 8,
+                "color": "#FF0000"
+            },
+            {
+                "weightKg": 20,
+                "pairCount": 1,
+                "color": "#4990E2"
+            },
+            {
+                "weightKg": 15,
+                "pairCount": 1,
+                "color": "#FFEF2A"
+            },
+            {
+                "weightKg": 10,
+                "pairCount": 1,
+                "color": "#2AB003"
+            },
+            {
+                "weightKg": 5,
+                "pairCount": 1,
+                "color": "#000000"
+            },
+            {
+                "weightKg": 2.5,
+                "pairCount": 1,
+                "color": "#000000"
+            },
+            {
+                "weightKg": 1.25,
+                "pairCount": 1,
+                "color": "#000000"
+            },
+            {
+                "weightKg": 1,
+                "pairCount": 1,
+                "color": "#4990E2"
+            },
+            {
+                "weightKg": 0.75,
+                "pairCount": 1,
+                "color": "#FF0000"
+            },
+            {
+                "weightKg": 0.5,
+                "pairCount": 1,
+                "color": "#2AB003"
+            },
+            {
+                "weightKg": 0.25,
+                "pairCount": 1,
+                "color": "#4990E2"
+            }
+        ]
+    },
+    "registration": {
+        "nextEntryId": 0,
+        "entries": [],
+        "lookup": {}
+    },
+    "lifting": {
+        "day": 1,
+        "platform": 1,
+        "flight": "C",
+        "lift": "S",
+        "overrideAttempt": null,
+        "overrideEntryId": null,
+        "columnDivisionWidthPx": 108,
+        "nextFlight": null
+    },
+    "records": {"confirmedRecords":{}}
+}
