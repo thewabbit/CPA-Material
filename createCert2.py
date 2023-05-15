@@ -16,10 +16,22 @@ import openpyxl
 import PyPDF2
 import tkcalendar
 
+class templates():
+    def __init__(self):
+        self.certificateTemplate = None
+        self.speakerTemplate = None
+        self.weighinTemplate = None
+        self.gearcheckTemplate = None
+        self.lifterDataInput = None
+        self.manualscorecardTemplate = None
+        self.olTemplate = None
+        self.lifterJSONTemplate = None
 
 class CPA_Cert_Generator (tk.Tk):
     def __init__(self):
         """Initialize the GUI application with buttons, labels, and a text box for logging."""
+
+        self.input = templates()
 
         super().__init__()
 
@@ -38,16 +50,11 @@ class CPA_Cert_Generator (tk.Tk):
             "weighinTemplate":"WEIGH IN TEMPLATE.docx",
             "gearcheckTemplate":"GEAR CHECK TEMPLATE.docx",
             "manualscorecardTemplate":"MANUAL SCORESHEET TEMPLATE.docx",
-            "olTemplate":"TEMPLATE.openlifter"
+            "olTemplate":"TEMPLATE.openlifter",
+            "lifterJSONTemplate":"LIFTER TEMPLATE.json"
         }
 
-        self.certificateTemplate = None
-        self.speakerTemplate = None
-        self.weighinTemplate = None
-        self.gearcheckTemplate = None
-        self.lifterDataInput = None
-        self.manualscorecardTemplate = None
-        self.olTemplate = None
+
 
         self.certificatePDFs = []
         self.speakerPDFs = []
@@ -93,6 +100,9 @@ class CPA_Cert_Generator (tk.Tk):
         self.OLTemplateButton = create_button(self, 'olTemplateButton', 'Select Openlifter Template', 40, 150, self.selectOLTemplate)
         self.selectedOlTemplate = create_label(self, 'selectedOlTemplate', '<please select file>', 40, 190)
 
+        self.LifterJSONTemplateButton = create_button(self, 'lifterJSONButton', 'Select Lifter JSON Template', 40, 230, self.selectOLTemplate)
+        self.selectedLifterJSONTemplate = create_label(self, 'selectedLifterJSONTemplate', '<please select file>', 40, 270)
+
         self.LifterDataButton = create_button(self, 'lifterDataButton', 'Select Lifter Data', 350, 60, self.selectLifterData)
         self.selectedLifterData = create_label(self, 'selectedLifterData', '<please select file>', 350, 100)
 
@@ -120,79 +130,89 @@ class CPA_Cert_Generator (tk.Tk):
         for k,v in self.templateNames.items():
             path = os.path.join(os.getcwd(),"Templates",v)
             if os.path.exists(path):
-                setattr(self,k,path)
+                setattr(self.input,k,path)
                 v1 = f"selected{k[0].upper() + k[1:]}"
                 getattr(self, v1).configure(text = v)
 
     def selectOLTemplate(self):
         # Open a file dialog box to allow the user to select the lifter data Excel file
-        self.olTemplate = filedialog.askopenfilename(filetypes=[('OL Template', '*.openlifter')])
+        self.input.olTemplate = filedialog.askopenfilename(filetypes=[('OL Template', '*.openlifter')])
         
         # Update the GUI to show the selected file name
-        self.selectedOlTemplate.configure(text = os.path.split(self.olTemplate)[1])
+        self.selectedOlTemplate.configure(text = os.path.split(self.input.olTemplate)[1])
         
         # Log the selected file path in the log box
-        self.log(f'selected input data:\n{self.olTemplate}')
+        self.log(f'selected input data:\n{self.input.olTemplate}')
+
+    def selectLifterJSONTemplate(self):
+        # Open a file dialog box to allow the user to select the lifter data Excel file
+        self.input.lifterJSONTemplate = filedialog.askopenfilename(filetypes=[('OL Template', '*.openlifter')])
+        
+        # Update the GUI to show the selected file name
+        self.selectedLifterJSONTemplate.configure(text = os.path.split(self.input.lifterJSONTemplate)[1])
+        
+        # Log the selected file path in the log box
+        self.log(f'selected input data:\n{self.input.lifterJSONTemplate}')
     
     def selectLifterData(self):
         # Open a file dialog box to allow the user to select the lifter data Excel file
-        self.lifterDataInput = filedialog.askopenfilename(filetypes=[('Lifter data', '*.xlsx')])
+        self.input.lifterDataInput = filedialog.askopenfilename(filetypes=[('Lifter data', '*.xlsx')])
         
         # Update the GUI to show the selected file name
-        self.selectedLifterData.configure(text = os.path.split(self.lifterDataInput)[1])
+        self.selectedLifterData.configure(text = os.path.split(self.input.lifterDataInput)[1])
         
         # Log the selected file path in the log box
-        self.log(f'selected input data:\n{self.lifterDataInput}')
+        self.log(f'selected input data:\n{self.input.lifterDataInput}')
 
     def selectCertificateTemplate(self):
         # Open a file dialog box to allow the user to select the certificate template Word file
-        self.certificateTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
+        self.input.certificateTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
         
         # Update the GUI to show the selected file name
-        self.selectedCertificateTemplate.configure(text = os.path.split(self.certificateTemplate)[1])
+        self.selectedCertificateTemplate.configure(text = os.path.split(self.input.certificateTemplate)[1])
         
         # Log the selected file path in the log box
-        self.log(f'selected template:\n{self.certificateTemplate}')
+        self.log(f'selected template:\n{self.input.certificateTemplate}')
 
     def selectSpeakerTemplate(self):
         # Open a file dialog box to allow the user to select the certificate template Word file
-        self.speakerTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
+        self.input.speakerTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
         
         # Update the GUI to show the selected file name
-        self.selectedSpeakerTemplate.configure(text = os.path.split(self.speakerTemplate)[1])
+        self.selectedSpeakerTemplate.configure(text = os.path.split(self.input.speakerTemplate)[1])
         
         # Log the selected file path in the log box
-        self.log(f'selected template:\n{self.speakerTemplate}')
+        self.log(f'selected template:\n{self.input.speakerTemplate}')
 
     def selectWeighinTemplate(self):
         # Open a file dialog box to allow the user to select the certificate template Word file
-        self.weighinTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
+        self.input.weighinTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
         
         # Update the GUI to show the selected file name
-        self.selectedWeighinTemplate.configure(text = os.path.split(self.weighinTemplate)[1])
+        self.selectedWeighinTemplate.configure(text = os.path.split(self.input.weighinTemplate)[1])
         
         # Log the selected file path in the log box
-        self.log(f'selected template:\n{self.weighinTemplate}')
+        self.log(f'selected template:\n{self.input.weighinTemplate}')
 
     def selectGearcheckTemplate(self):
         # Open a file dialog box to allow the user to select the certificate template Word file
-        self.gearcheckTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
+        self.input.gearcheckTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
         
         # Update the GUI to show the selected file name
-        self.selectedGearcheckTemplate.configure(text = os.path.split(self.gearcheckTemplate)[1])
+        self.selectedGearcheckTemplate.configure(text = os.path.split(self.input.gearcheckTemplate)[1])
         
         # Log the selected file path in the log box
-        self.log(f'selected template:\n{self.gearcheckTemplate}')
+        self.log(f'selected template:\n{self.input.gearcheckTemplate}')
 
     def selectManualScoreCardTemplate(self):
         # Open a file dialog box to allow the user to select the certificate template Word file
-        self.manualscorecardTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
+        self.input.manualscorecardTemplate = filedialog.askopenfilename(filetypes=[('Template file', '*.docx')])
         
         # Update the GUI to show the selected file name
-        self.selectedManualscorecardTemplate.configure(text = os.path.split(self.manualscorecardTemplate)[1])
+        self.selectedManualscorecardTemplate.configure(text = os.path.split(self.input.manualscorecardTemplate)[1])
         
         # Log the selected file path in the log box
-        self.log(f'selected template:\n{self.manualscorecardTemplate}')
+        self.log(f'selected template:\n{self.input.manualscorecardTemplate}')
 
 
     def log(self, message, level='info'):
@@ -223,7 +243,7 @@ class CPA_Cert_Generator (tk.Tk):
         self.eventName = self.eventNameField.get()
 
         # Load the Excel workbook and select the active worksheet
-        wb = openpyxl.load_workbook(self.lifterDataInput)
+        wb = openpyxl.load_workbook(self.input.lifterDataInput)
         ws = wb.active
 
         ID = 1
@@ -299,7 +319,7 @@ class CPA_Cert_Generator (tk.Tk):
 
             self.log(f"Gear check day {i}")
 
-            doc = docx.Document(self.gearcheckTemplate)
+            doc = docx.Document(self.input.gearcheckTemplate)
             table = doc.tables[0]
             for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
                 rc = table.add_row().cells
@@ -340,7 +360,7 @@ class CPA_Cert_Generator (tk.Tk):
 
             self.log(f"Weigh ins day {i}")
 
-            doc = docx.Document(self.weighinTemplate)
+            doc = docx.Document(self.input.weighinTemplate)
             table = doc.tables[0]
             for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
                 rc = table.add_row().cells
@@ -379,9 +399,9 @@ class CPA_Cert_Generator (tk.Tk):
 
         pdfgen = PDFGenerator()
 
-        args =  [(lifter, self.certificateTemplate, self.GUID, self.temp) for lifter in self.lifterData]
+        args =  [(lifter, self.input.certificateTemplate, self.GUID, self.temp) for lifter in self.lifterData]
         resultsCert = pool1.map(pdfgen.createCetificates, args)
-        args =  [(lifter, self.speakerTemplate, self.GUID, self.temp) for lifter in self.lifterData]
+        args =  [(lifter, self.input.speakerTemplate, self.GUID, self.temp) for lifter in self.lifterData]
         resultsSpeaker = pool1.map(pdfgen.createSpeaker, args)
 
         # close the pool and wait for the work to finish
@@ -417,7 +437,7 @@ class CPA_Cert_Generator (tk.Tk):
 
                 self.log(f"Scoresheet day {i}")
 
-                doc = docx.Document(self.manualscorecardTemplate)
+                doc = docx.Document(self.input.manualscorecardTemplate)
                 table = doc.tables[0]
                 for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
                     rc = table.add_row().cells
@@ -466,11 +486,51 @@ class CPA_Cert_Generator (tk.Tk):
 
         for i in range(0,self.days):
             i += 1
-            curDay = [d for d in self.lifterData if d['Day'] == i]
+            id = 0
+            outputs = {}
 
+            for d in self.lifterData:
+
+                if d['Day'] == i:
+                    lifterTemplate = json.load(open(self.input.lifterJSONTemplate))
+
+                    lifterTemplate["lot"] = d["Lot"]
+                    lifterTemplate["guest"] = False
+                    lifterTemplate["novice"] = False
+                    lifterTemplate["name"] = f'{d["First name"]} {d["Last name"]}'
+                    lifterTemplate["divisions"][0] = d["Age"]
+                    lifterTemplate["flight"] = d["Flight"].upper()
+                    lifterTemplate["day"] = 1
+                    lifterTemplate["instagram"] = d["Instagram"]
+                    lifterTemplate["team"] = d["Association"]
+                    lifterTemplate["intendedWeightClassKg"] = d["Weight"]
+                    lifterTemplate["notes"] = d["Notes"]
+                    lifterTemplate["country"] = "New Zealand"
+                    lifterTemplate["id"] = id
+                    lifterTemplate["birthDate"] = d["DOB"].strftime("%Y-%m-%d")
+                    lifterTemplate["age"] = self.eventDate.year - d["DOB"].year - ((self.eventDate.month, self.eventDate.day) < (d["DOB"].month, d["DOB"].day))
+                    lifterTemplate["events"][0] = "SBD"
+
+                    sex = d["Gender"]
+                    if sex.lower() == "male":
+                        lifterTemplate["sex"] = "M"
+                    else:
+                        lifterTemplate["sex"] = "F"
+
+                    equipment = d["Raw"]
+                    if equipment == "Raw":
+                        lifterTemplate["equipment"] = "Sleeves"
+                    else:
+                        lifterTemplate["equipment"] = "Wraps"
+
+                    lifterTemplate["canBreakRecords"] = True
+                    
+                    outputs[id] = lifterTemplate
+
+                    id += 1
             self.log(f"OL Data Day {i}")
 
-            OLTemplate = json.load(open(self.olTemplate))
+            OLTemplate = json.load(open(self.input.olTemplate))
 
             OLTemplate["meet"]["name"] = f"{self.eventName} Session {i}"
 
@@ -479,6 +539,14 @@ class CPA_Cert_Generator (tk.Tk):
             OLTemplate["meet"]["date"] = date.strftime("%Y-%m-%d")
             OLTemplate["meet"]["lengthDays"] = 1
             OLTemplate["meet"]["platformsOnDays"] = [1]
+
+            OLTemplate["registration"]["entries"] = list(outputs.values())
+
+            lookup = {}
+            for k in list(outputs.keys()):
+                lookup[int(k)]= int(k)
+
+            OLTemplate["registration"]["lookup"] = lookup
             
             with open(f"{self.eventName} Session {i}.openlifter", 'w', newline='') as file:
                 file.write(json.dumps(OLTemplate).replace("'", ""))
