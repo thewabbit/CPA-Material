@@ -1,5 +1,5 @@
 *.openlifter
 *.pdf
-input/
+inputs/
 build/
 dist/
