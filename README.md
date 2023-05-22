@@ -1,1 +1,1 @@
-pyinstaller .\createCert2.py --onefile
+pyinstaller .\createCert2.spec
