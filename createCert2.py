@@ -26,6 +26,7 @@ class templates():
         self.manualscorecardTemplate = None
         self.olTemplate = None
         self.lifterJSONTemplate = None
+        self.eventName = None
 
 class CPA_Cert_Generator (tk.Tk):
     def __init__(self):
@@ -40,7 +41,6 @@ class CPA_Cert_Generator (tk.Tk):
         self.temp = "c:\\temp\\"
         self.lots = {}
         self.days = 0
-        self.eventName = ""
         self.eventDate = ""
 
         # Set the initial values of the template and lifterData attributes to None.
@@ -240,7 +240,7 @@ class CPA_Cert_Generator (tk.Tk):
     def proccessData(self):
         self.log('compiling lifter input data')
 
-        self.eventName = self.eventNameField.get()
+        self.input.eventName = self.eventNameField.get()
 
         # Load the Excel workbook and select the active worksheet
         wb = openpyxl.load_workbook(self.input.lifterDataInput)
@@ -326,7 +326,7 @@ class CPA_Cert_Generator (tk.Tk):
                 rc[0].text = f"{j['First name']} {j['Last name']}"  
         
             
-            self.findReplaceParagraph(doc,dict(zzEVENTzz=self.eventName,zzSESSIONzz=str(i)))
+            self.findReplaceParagraph(doc,dict(zzEVENTzz=self.input.eventName,zzSESSIONzz=str(i)))
 
             time.sleep(0.5)
             path = os.path.join(self.temp, self.GUID, f'gear_check_{str(i)}.docx')
@@ -448,7 +448,7 @@ class CPA_Cert_Generator (tk.Tk):
                     rc[5].text = f"{j['Weight']}"
             
                 
-                self.findReplaceParagraph(doc,dict(zzEVENTzz=self.eventName,zzSESSIONzz=str(i)))
+                self.findReplaceParagraph(doc,dict(zzEVENTzz=self.input.eventName,zzSESSIONzz=str(i)))
 
                 time.sleep(0.5)
                 path = os.path.join(self.temp, self.GUID, f'manual_scoresheet_{str(i)}.docx')
@@ -532,7 +532,7 @@ class CPA_Cert_Generator (tk.Tk):
 
             OLTemplate = json.load(open(self.input.olTemplate))
 
-            OLTemplate["meet"]["name"] = f"{self.eventName} Session {i}"
+            OLTemplate["meet"]["name"] = f"{self.input.eventName} Session {i}"
 
             dayAdv = (i - 1) // 2
             date = self.eventDate + datetime.timedelta(days=dayAdv)
@@ -548,23 +548,36 @@ class CPA_Cert_Generator (tk.Tk):
 
             OLTemplate["registration"]["lookup"] = lookup
             
-            with open(f"{self.eventName} Session {i}.openlifter", 'w', newline='') as file:
+            with open(f"{self.input.eventName} Session {i}.openlifter", 'w', newline='') as file:
                 file.write(json.dumps(OLTemplate).replace("'", ""))
 
+    def checkInputs(self):
+        r = True
+        self.input.eventName = self.eventNameField.get()
+        for attr, value in vars(self.input).items():
+            if value is not None:
+                pass
+            else:
+                self.log(f"Please populate {attr}")
+                r = False
+
+        return r
+    
     def run(self):
-        self.proccessData()
-        self.GUID = str(uuid.uuid4())
-        os.mkdir(os.path.join(self.temp, self.GUID))
+        if self.checkInputs():
+            self.proccessData()
+            self.GUID = str(uuid.uuid4())
+            os.mkdir(os.path.join(self.temp, self.GUID))
 
 
-        self.createOLData()
-        # self.runLifterSpecific()
-        # self.createWeighIn()
-        # self.createGearCheck()
-        # self.createManualScoreSheet()
-        # self.cleanUp()
+            self.createOLData()
+            self.runLifterSpecific()
+            self.createWeighIn()
+            self.createGearCheck()
+            self.createManualScoreSheet()
+            # self.cleanUp()
 
-        self.log("~~~~~~~~~~~~~~~~~\nCompleted!\n~~~~~~~~~~~~~~~~~")
+            self.log("~~~~~~~~~~~~~~~~~\nCompleted!\n~~~~~~~~~~~~~~~~~")
         
 
 class PDFGenerator:
