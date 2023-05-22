@@ -9,9 +9,9 @@ block_cipher = None
 
 a = Analysis(
     ['createCert2.py'],
-    pathex=['G:\\My Drive\\Documents\\Powerlifting\\CPA\\Create Certificates\\.venv\\Lib\\site-packages'],
+    pathex=[],
     binaries=[],
-    datas=[(path.join(site_packages,"docx","templates"), "docx/templates")],
+    datas=[(path.join(site_packages,"docx","templates"), "docx/templates"),(path.join(site_packages,"docx","templates"), "docx/templates")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
