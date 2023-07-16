@@ -249,7 +249,6 @@ class CPA_Cert_Generator (tk.Tk):
         ws = wb.active
 
         ID = 1
-
         # Iterate through each row of data in the worksheet
         for row in ws.iter_rows(min_row=2, values_only=True):
             # Check if the first column of the row is not None
