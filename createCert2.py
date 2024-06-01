@@ -3,11 +3,9 @@ import multiprocessing.dummy
 import os
 import random
 import re
-import shutil
 import tempfile
 import time
 import tkinter as tk
-import uuid
 from tkinter import Button, Label, filedialog, scrolledtext
 import json
 
@@ -52,7 +50,6 @@ class CPA_Cert_Generator (tk.Tk):
             "weighinTemplate":"WEIGH IN TEMPLATE.docx",
             "gearcheckTemplate":"GEAR CHECK TEMPLATE.docx",
             "manualscorecardTemplate":"MANUAL SCORESHEET TEMPLATE.docx",
-            "olTemplate":"TEMPLATE.openlifter",
             "lifterJSONTemplate":"LIFTER TEMPLATE.json"
         }
 
@@ -99,11 +96,8 @@ class CPA_Cert_Generator (tk.Tk):
         self.eventDateField.place(x=40,y=110)
         self.eventDateLabel = create_label(self, 'eventDateLabel', 'Event Starting Date', 40, 80)
 
-        self.OLTemplateButton = create_button(self, 'olTemplateButton', 'Openlifter Template', 40, 180, self.selectOLTemplate)
-        self.selectedOlTemplate = create_label(self, 'selectedOlTemplate', '<please select file>', 40, 220)
-
-        self.LifterJSONTemplateButton = create_button(self, 'lifterJSONButton', 'Lifter JSON Template', 40, 260, self.selectOLTemplate)
-        self.selectedLifterJSONTemplate = create_label(self, 'selectedLifterJSONTemplate', '<please select file>', 40, 300)
+        self.LCTemplateButton = create_button(self, 'lcTemplateButton', 'LiftingCast Template', 40, 180, self.selectLCTemplate)
+        self.selectedLcTemplate = create_label(self, 'selectedLcTemplate', '<please select file>', 40, 220)
 
         self.LifterDataButton = create_button(self, 'lifterDataButton', 'Lifter Data', 350, 50, self.selectLifterData)
         self.selectedLifterData = create_label(self, 'selectedLifterData', '<please select file>', 350, 90)
@@ -136,26 +130,16 @@ class CPA_Cert_Generator (tk.Tk):
                 v1 = f"selected{k[0].upper() + k[1:]}"
                 getattr(self, v1).configure(text = v)
 
-    def selectOLTemplate(self):
+    def selectLCTemplate(self):
         # Open a file dialog box to allow the user to select the lifter data Excel file
-        self.input.olTemplate = filedialog.askopenfilename(filetypes=[('OL Template', '*.openlifter')])
+        self.input.lcTemplate = filedialog.askopenfilename(filetypes=[('LC Template', '*.json')])
         
         # Update the GUI to show the selected file name
-        self.selectedOlTemplate.configure(text = os.path.split(self.input.olTemplate)[1])
+        self.selectedLcTemplate.configure(text = os.path.split(self.input.lcTemplate)[1])
         
         # Log the selected file path in the log box
-        self.log(f'selected input data:\n{self.input.olTemplate}')
+        self.log(f'selected input data:\n{self.input.lcTemplate}')
 
-    def selectLifterJSONTemplate(self):
-        # Open a file dialog box to allow the user to select the lifter data Excel file
-        self.input.lifterJSONTemplate = filedialog.askopenfilename(filetypes=[('OL Template', '*.openlifter')])
-        
-        # Update the GUI to show the selected file name
-        self.selectedLifterJSONTemplate.configure(text = os.path.split(self.input.lifterJSONTemplate)[1])
-        
-        # Log the selected file path in the log box
-        self.log(f'selected input data:\n{self.input.lifterJSONTemplate}')
-    
     def selectLifterData(self):
         # Open a file dialog box to allow the user to select the lifter data Excel file
         self.input.lifterDataInput = filedialog.askopenfilename(filetypes=[('Lifter data', '*.xlsx')])
@@ -483,7 +467,7 @@ class CPA_Cert_Generator (tk.Tk):
         # self.log("Cleaning up")
         pass
 
-
+    #to remove, keep for reference while building
     def createOLData(self):
         self.eventDate = self.eventDateField.get_date()
 
@@ -554,6 +538,10 @@ class CPA_Cert_Generator (tk.Tk):
             with open(f"{self.input.eventName} Session {i}.openlifter", 'w', newline='') as file:
                 file.write(json.dumps(OLTemplate).replace("'", ""))
 
+    def createLCData(self):
+        print()
+
+
     def checkInputs(self):
         r = True
         self.input.eventName = self.eventNameField.get()
@@ -576,7 +564,7 @@ class CPA_Cert_Generator (tk.Tk):
             #os.mkdir(os.path.join(self.temp, self.GUID))
 
 
-            self.createOLData()
+            self.createLCData()
             self.runLifterSpecific()
             self.createWeighIn()
             self.createGearCheck()
