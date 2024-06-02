@@ -8,7 +8,7 @@ import time
 import tkinter as tk
 from tkinter import Button, Label, filedialog, scrolledtext
 import json
-
+import csv
 import docx
 import docx2pdf
 import openpyxl
@@ -23,8 +23,7 @@ class templates():
         self.gearcheckTemplate = None
         self.lifterDataInput = None
         self.manualscorecardTemplate = None
-        self.olTemplate = None
-        self.lifterJSONTemplate = None
+        self.lcTemplate = None
         self.eventName = None
 
 class CPA_Cert_Generator (tk.Tk):
@@ -50,7 +49,7 @@ class CPA_Cert_Generator (tk.Tk):
             "weighinTemplate":"WEIGH IN TEMPLATE.docx",
             "gearcheckTemplate":"GEAR CHECK TEMPLATE.docx",
             "manualscorecardTemplate":"MANUAL SCORESHEET TEMPLATE.docx",
-            "lifterJSONTemplate":"LIFTER TEMPLATE.json"
+            "lcTemplate":"lifters_import_template.csv"
         }
 
 
@@ -96,7 +95,7 @@ class CPA_Cert_Generator (tk.Tk):
         self.eventDateField.place(x=40,y=110)
         self.eventDateLabel = create_label(self, 'eventDateLabel', 'Event Starting Date', 40, 80)
 
-        self.LCTemplateButton = create_button(self, 'lcTemplateButton', 'LiftingCast Template', 40, 180, self.selectLCTemplate)
+        self.lcTemplateButton = create_button(self, 'lcTemplateButton', 'LiftingCast Template', 40, 180, self.selectlcTemplate)
         self.selectedLcTemplate = create_label(self, 'selectedLcTemplate', '<please select file>', 40, 220)
 
         self.LifterDataButton = create_button(self, 'lifterDataButton', 'Lifter Data', 350, 50, self.selectLifterData)
@@ -130,9 +129,9 @@ class CPA_Cert_Generator (tk.Tk):
                 v1 = f"selected{k[0].upper() + k[1:]}"
                 getattr(self, v1).configure(text = v)
 
-    def selectLCTemplate(self):
+    def selectlcTemplate(self):
         # Open a file dialog box to allow the user to select the lifter data Excel file
-        self.input.lcTemplate = filedialog.askopenfilename(filetypes=[('LC Template', '*.json')])
+        self.input.lcTemplate = filedialog.askopenfilename(filetypes=[('lc Template', '*.csv')])
         
         # Update the GUI to show the selected file name
         self.selectedLcTemplate.configure(text = os.path.split(self.input.lcTemplate)[1])
@@ -251,22 +250,49 @@ class CPA_Cert_Generator (tk.Tk):
 
                 self.lots[day][flight].append({"id":ID,"rand":__rand})
 
+                #set division
+                division = ''
+                if row[6] == "Male":
+                    division += "Men's "
+                else:
+                    division += "Women's "
+                
+                division += row[9] + " " + row[2]
+
+                if row[10] != "3 Lift":
+                    division +=  " " + row[10]
+
                 lifterDataTemplate = {
-                    "Day": day,
-                    "Flight": flight,
-                    "Age": re.sub(r'\([^)]*\)', '', row[2]),
-                    "Weight": re.sub(r'^.*\s-\s', '', row[3]),
-                    "First name": row[4],
-                    "Last name": row[5],
-                    "Gender": row[6],
-                    "DOB": row[7],
-                    "Nation": "New Zealand",
-                    "Association": row[8],
-                    "Raw": row[9],
-                    "Instagram": row[10],
-                    "Notes": row[11],
-                    "ID": ID,
-                    "Lot": "0"
+
+                    "name":row[4] + ' ' + row[5],
+                    "team":"",
+                    "lot": "0",
+                    "platform":"1",
+                    "session":day,
+                    "flight":flight,
+                    "birthDate":row[7].strftime("%d/%m/%Y"),
+                    "memberNumber":"",
+                    "gender":row[6],
+                    "rawOrEquipped":row[9],
+                    "division":division ,
+                    "declaredAwardsWeightClass":re.match(r'^\d+', row[3]).group(0),
+                    "bodyWeight":"",
+                    "squatRackHeight":"",
+                    "benchRackHeight":"",
+                    "squat1":"",
+                    "bench1":"",
+                    "dead1":"",
+                    "wasDrugTested":"",
+                    "phoneNumber":"",
+                    "country":"NZ",
+                    "streetAddress":"",
+                    "city":"",
+                    "state":"",
+                    "zipCode":"",
+                    "email":row[11],
+                    "emergencyContactName":row[12],
+                    "emergencyContactPhoneNumber":row[13],
+                    "additionalItems":""
                 }
 
                 self.lifterData.append(lifterDataTemplate)
@@ -279,10 +305,10 @@ class CPA_Cert_Generator (tk.Tk):
                 print(flight)
                 lotsSorted = sorted(v, key=lambda x: x['rand'])
                 for i in range(0, len(lotsSorted)):
-                    self.lifterData[lotsSorted[i]["id"]-1]["Lot"]=str(i+1)
+                    self.lifterData[lotsSorted[i]["id"]-1]["lot"]=str(i+1)
         
         #get number of days
-        self.days = max(list(set(item["Day"] for item in self.lifterData)))
+        self.days = max(list(set(item["session"] for item in self.lifterData)))
 
     def findReplaceParagraph(self, doc, data, revert=False):
         # If revert is True, swap find and replace arguments
@@ -301,15 +327,15 @@ class CPA_Cert_Generator (tk.Tk):
         self.log("Creating gear check sheets")
         for i in range(0,self.days):
             i += 1
-            curDay = [d for d in self.lifterData if d['Day'] == i]
+            curDay = [d for d in self.lifterData if d['session'] == i]
 
             self.log(f"Gear check day {i}")
 
             doc = docx.Document(self.input.gearcheckTemplate)
             table = doc.tables[0]
-            for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
+            for j in sorted(curDay, key=lambda x: (x['flight'],int(x['lot']))):
                 rc = table.add_row().cells
-                rc[0].text = f"{j['First name']} {j['Last name']}"  
+                rc[0].text = f"{j['name']}"  
         
             
             self.findReplaceParagraph(doc,dict(zzEVENTzz=self.input.eventName,zzSESSIONzz=str(i)))
@@ -342,18 +368,18 @@ class CPA_Cert_Generator (tk.Tk):
         self.log("Creating weigh ins")
         for i in range(0,self.days):
             i += 1
-            curDay = [d for d in self.lifterData if d['Day'] == i]
+            curDay = [d for d in self.lifterData if d['session'] == i]
 
             self.log(f"Weigh ins day {i}")
 
             doc = docx.Document(self.input.weighinTemplate)
             table = doc.tables[0]
-            for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
+            for j in sorted(curDay, key=lambda x: (x['flight'],int(x['lot']))):
                 rc = table.add_row().cells
-                rc[0].text = str(j['Day'])
-                rc[1].text = j["Flight"]
-                rc[2].text = f"{j['First name']} {j['Last name']}"
-                rc[3].text = j['Lot']            
+                rc[0].text = str(j['session'])
+                rc[1].text = j["flight"]
+                rc[2].text = f"{j['name']}"
+                rc[3].text = j['lot']            
             
             time.sleep(0.5)
             path = os.path.join(self.temp, f'weigh_in_day_{str(i)}.docx')
@@ -420,7 +446,7 @@ class CPA_Cert_Generator (tk.Tk):
             self.log("Creating manual scoresheets")
             for i in range(0,self.days):
                 i += 1
-                curDay = [d for d in self.lifterData if d['Day'] == i]
+                curDay = [d for d in self.lifterData if d['session'] == i]
 
                 self.log(f"Scoresheet day {i}")
 
@@ -428,10 +454,10 @@ class CPA_Cert_Generator (tk.Tk):
                 table = doc.tables[0]
                 for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
                     rc = table.add_row().cells
-                    rc[0].text = f"{j['First name']} {j['Last name']}"  
+                    rc[0].text = f"{j['name']}"  
                     rc[1].text = f"" #teamS
                     rc[2].text = f"{j['Age']}"
-                    rc[3].text = f"{j['Lot']}"
+                    rc[3].text = f"{j['lot']}"
                     rc[5].text = f"{j['Weight']}"
             
                 
@@ -538,8 +564,15 @@ class CPA_Cert_Generator (tk.Tk):
             with open(f"{self.input.eventName} Session {i}.openlifter", 'w', newline='') as file:
                 file.write(json.dumps(OLTemplate).replace("'", ""))
 
-    def createLCData(self):
-        print()
+    def createlcData(self):
+        # Get the keys from the first dictionary as the header
+        keys = self.lifterData[0].keys()
+
+        # Write the data to a CSV file
+        with open(f"{self.input.eventName} Lifters.csv", 'w', newline='') as output_file:
+            dict_writer = csv.DictWriter(output_file, fieldnames=keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(self.lifterData)
 
 
     def checkInputs(self):
@@ -564,7 +597,7 @@ class CPA_Cert_Generator (tk.Tk):
             #os.mkdir(os.path.join(self.temp, self.GUID))
 
 
-            self.createLCData()
+            self.createlcData()
             self.runLifterSpecific()
             self.createWeighIn()
             self.createGearCheck()
@@ -585,11 +618,11 @@ class PDFGenerator:
         doc = docx.Document(speakerTemplate)
 
 
-        name = f'{lifter["First name"]} {lifter["Last name"]}'
-        dob = lifter["DOB"].strftime("%d/%m/%Y")
+        name = f'{lifter["name"]}'
+        dob = lifter["birthDate"]
         
         #spaces are so it doesn't replace other numbers in the template
-        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzDOBzz=dob, zzNATIONzz=lifter["Nation"], zzLOTzz=lifter["Lot"]+"   "))
+        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["declaredAwardsWeightClass"], zzDOBzz=dob, zzNATIONzz=lifter["country"], zzLOTzz=lifter["lot"]+"   "))
 
         time.sleep(0.1)
         path = os.path.join(temp, f'speaker_{name}.docx')
@@ -603,9 +636,9 @@ class PDFGenerator:
 
         doc = docx.Document(certificateTemplate)
 
-        name = f'{lifter["First name"]} {lifter["Last name"]}'
+        name = f'{lifter["name"]}'
 
-        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["Weight"], zzGENDERzz=lifter["Gender"], zzDIVzz=lifter["Age"], zzEQUIPzz=lifter["Raw"]))
+        self.findReplaceTable(doc,dict(zzNAMEzz=name,zzCLASSzz=lifter["declaredAwardsWeightClass"], zzGENDERzz=lifter["gender"], zzDIVzz=lifter["division"], zzEQUIPzz=lifter["rawOrEquipped"]))
 
         time.sleep(0.1)
         path = os.path.join(temp, f'certificate_{name}.docx')
