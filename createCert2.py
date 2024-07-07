@@ -275,7 +275,7 @@ class CPA_Cert_Generator (tk.Tk):
                     "gender":row[6],
                     "rawOrEquipped":row[9],
                     "division":division ,
-                    "declaredAwardsWeightClass":re.match(r'^\d+', row[3]).group(0),
+                    "declaredAwardsWeightClass":re.sub(r'[^0-9+]', '', row[3]),
                     "bodyWeight":"",
                     "squatRackHeight":"",
                     "benchRackHeight":"",
@@ -452,13 +452,13 @@ class CPA_Cert_Generator (tk.Tk):
 
                 doc = docx.Document(self.input.manualscorecardTemplate)
                 table = doc.tables[0]
-                for j in sorted(curDay, key=lambda x: (x['Flight'],int(x['Lot']))):
+                for j in sorted(curDay, key=lambda x: (x['flight'],int(x['lot']))):
                     rc = table.add_row().cells
                     rc[0].text = f"{j['name']}"  
                     rc[1].text = f"" #teamS
-                    rc[2].text = f"{j['Age']}"
+                    rc[2].text = f"{j['division']}"
                     rc[3].text = f"{j['lot']}"
-                    rc[5].text = f"{j['Weight']}"
+                    rc[5].text = f"{j['declaredAwardsWeightClass']}"
             
                 
                 self.findReplaceParagraph(doc,dict(zzEVENTzz=self.input.eventName,zzSESSIONzz=str(i)))
